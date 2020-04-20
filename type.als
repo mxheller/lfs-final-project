@@ -39,7 +39,7 @@ pred typeEqual[typeA: Type, typeB: Type] {
     some f: Variant->Variant | {
         bijective[f, typeA.variants, typeB.variants]
 
-        // Causing KodKod to have a tantrum
+        // The corresponding variants are equivalent
         all vA: f.Variant | let vB = f[vA] {
              variantEqual[typeA, typeB, vA, vB]
         }
