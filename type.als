@@ -5,34 +5,26 @@ abstract sig Variant {
     fields : seq Type
 }
 
-one sig Number extends Type {}
-
-one sig TreeA extends Type {}
-one sig mtA extends Variant {}
-one sig nodeA extends Variant {}
-
-one sig TreeB extends Type {}
-one sig mtB extends Variant {}
-one sig nodeB extends Variant {}
+abstract sig BuiltinType extends Type {}
+abstract sig StudentType extends Type {}
+abstract sig InstructorType extends Type {}
 
 fact equivalent {
-    let studentTypes = TreeA | let instructorTypes = TreeB | let primitives = Number | {
-        // There exists a bijection between Types
-        some f: Type->Type | bijective[f, studentTypes, instructorTypes] | {
-			let f = f + ((primitives->primitives) & iden) | {
-				// There exists a bijection between Variants
-			    some g: Variant->Variant | {
-                    bijective[g, studentTypes.variants, instructorTypes.variants]
+    // There exists a bijection between student and instructor types
+    some f: Type->Type | bijective[f, StudentType, InstructorType] | {
+        let f = f + ((BuiltinType->BuiltinType) & iden) | {
+            // There exists a bijection between student and instructor variants
+            some g: Variant->Variant | {
+                bijective[g, StudentType.variants, InstructorType.variants]
 
-                    // All student types are equivalent to their corresponding type
-                    all t1: studentTypes | let t2 = f[t1] | {
-                        bijective[((t1.variants)->(t2.variants)) & g, t1.variants, t2.variants]
-                        all v1: t1.variants | let v2 = g[v1] | {
-                            variantEqual[v1, v2, f]
-                        }
+                // All student types are equivalent to their corresponding instructor type
+                all t1: StudentType | let t2 = f[t1] | {
+                    bijective[((t1.variants)->(t2.variants)) & g, t1.variants, t2.variants]
+                    all v1: t1.variants | let v2 = g[v1] | {
+                        variantEqual[v1, v2, f]
                     }
-			    }
-			}
+                }
+            }
         }
     }
 }
@@ -70,16 +62,4 @@ pred bijective[f: univ->univ, a: univ, b: univ] {
     ~f.f in iden
 }
 
-pred treeA {
-    TreeA.variants = mtA + nodeA
-    no mtA.fields
-    nodeA.fields = 0->Number + 1->TreeA + 2->TreeA
-}
-
-pred treeB {
-    TreeB.variants = mtB + nodeB
-    no mtB.fields
-    nodeB.fields = 0->Number + 1->TreeB + 2->TreeB
-}
-
-run {treeA treeB} for 3 Type, 4 Variant
+run {} for 6 Type, 6 Variant
