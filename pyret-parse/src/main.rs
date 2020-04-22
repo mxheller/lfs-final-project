@@ -61,7 +61,7 @@ impl Type {
     }
 
     fn write_forge_constraints(&self, mut out: impl Write) -> std::io::Result<()> {
-        writeln!(out, "pred abstract{} {{", self.name)?;
+        writeln!(out, "fact abstract{} {{", self.name)?;
         writeln!(
             out,
             "    {}.variants = {}",
@@ -159,7 +159,7 @@ impl FromStr for Field {
 
 impl Field {
     fn forge_repr(&self, field_num: usize) -> String {
-        format!("sing[{}]->{}", field_num, self.type_name)
+        format!("{}->{}", field_num, self.type_name)
     }
 }
 
@@ -180,11 +180,11 @@ fn main() {
             Err(e) => eprintln!("Unable to open file '{}': {}", input, e),
             Ok(mut file) => {
                 let mut definition = String::new();
-                file.read_to_string(&mut definition);
+                file.read_to_string(&mut definition).unwrap();
                 match Type::parse(definition.lines()) {
                     Err(e) => eprintln!("Failed to parse definition: {:?}", e),
                     Ok(parsed) => {
-                        parsed.write_forge_spec(std::io::stdout());
+                        parsed.write_forge_spec(std::io::stdout()).unwrap();
                     }
                 }
             }
