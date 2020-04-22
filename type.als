@@ -2,10 +2,10 @@ abstract sig Type {
     variants : set Variant
 }
 abstract sig Variant {
-    fields : set Int->Type
+    fields : seq Type
 }
 
-one sig TNumber extends Type {}
+one sig Number extends Type {}
 
 one sig TreeA extends Type {}
 one sig mtA extends Variant {}
@@ -15,33 +15,39 @@ one sig TreeB extends Type {}
 one sig mtB extends Variant {}
 one sig nodeB extends Variant {}
 
-fact functionalFields {
-    ~(Variant.fields).(Variant.fields) in iden 
-}
+fact equivalent {
+    let studentTypes = TreeA | let instructorTypes = TreeB | let primitives = Number | {
+        // There exists a bijection between Types
+        some f: Type->Type | bijective[f, studentTypes, instructorTypes] | {
+			let f = f + ((primitives->primitives) & iden) | {
+				// There exists a bijection between Variants
+			    some g: Variant->Variant | {
+                    bijective[g, studentTypes.variants, instructorTypes.variants]
 
-pred variantEqual[typeA: Type, typeB: Type, variantA: Variant, variantB: Variant] {
-    // There exists a bijection between the fields of the variant
-    some f: Int->Int | {
-        bijective[f, variantA.fields.Type, variantB.fields.Type]
-
-        // Ensure that the types are the same
-        all i: f.Int | {
-             let t1 = variantA.fields[i] | let t2 = variantB.fields[f[i]] | {
-                 // The types are literally equivalent or are references to their parents
-                t1 = t2 or (t1 = typeA and t2 = typeB)
-             }
+                    // All student types are equivalent to their corresponding type
+                    all t1: studentTypes | let t2 = f[t1] | {
+                        bijective[((t1.variants)->(t2.variants)) & g, t1.variants, t2.variants]
+                        all v1: t1.variants | let v2 = g[v1] | {
+                            variantEqual[v1, v2, f]
+                        }
+                    }
+			    }
+			}
         }
     }
 }
 
-pred typeEqual[typeA: Type, typeB: Type] {
-    // Establish a bijection between the variants of `a` and the variants of `b`
-    some f: Variant->Variant | {
-        bijective[f, typeA.variants, typeB.variants]
+pred variantEqual[variantA: Variant, variantB: Variant, f: Type->Type] {
+    // There exists a bijection between the fields of the variant
+    some g: Int->Int | {
+        bijective[g, variantA.fields.inds, variantB.fields.inds]
 
-        // The corresponding variants are equivalent
-        all vA: f.Variant | let vB = f[vA] {
-             variantEqual[typeA, typeB, vA, vB]
+        // Ensure that the types are equivalent
+        all i: g.Int | {
+             let t1 = variantA.fields[i] | let t2 = variantB.fields[g[i]] | {
+                 // The types are equal
+                f[t1] = t2
+             }
         }
     }
 }
@@ -60,20 +66,20 @@ pred bijective[f: univ->univ, a: univ, b: univ] {
     // Injectivity
     f.~f in iden
 
-    // Ensure its a function
+    // Ensure it's a function
     ~f.f in iden
 }
 
 pred treeA {
     TreeA.variants = mtA + nodeA
     no mtA.fields
-    nodeA.fields = 0->TNumber + 1->TreeA + 2->TreeA
+    nodeA.fields = 0->Number + 1->TreeA + 2->TreeA
 }
 
 pred treeB {
     TreeB.variants = mtB + nodeB
     no mtB.fields
-    nodeB.fields = 3->TNumber + 4->TreeB + 5->TreeB
+    nodeB.fields = 0->Number + 1->TreeB + 2->TreeB
 }
 
-run {treeA treeB typeEqual[TreeA, TreeB]} for 3 Type, 4 Variant
+run {treeA treeB} for 3 Type, 4 Variant
