@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             setLoadText('Enter data definitions.', 'error')
             disableButtons()
+            setGenerationStatus('', '')
         }
     })
 
