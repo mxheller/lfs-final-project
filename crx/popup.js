@@ -1,4 +1,6 @@
-sdocument.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
+    let correctParsedOutput = null
+
     function setLoadText(text, status) {
         const node = document.querySelector('#program-status')
         node.innerHTML = text
@@ -26,10 +28,11 @@ sdocument.addEventListener('DOMContentLoaded', function() {
             document.querySelector('#spec-input').value
         )
         if (!validateOutput.error) {
+            correctParsedOutput = validateOutput
             setLoadText('Successfully loaded!', 'success')
-            console.log(validateOutput)
             enableButtons()
         } else {
+            correctParsedOutput = null
             setLoadText(validateOutput.error, 'error')
             disableButtons()
             setGenerationStatus('', '')
@@ -71,10 +74,10 @@ sdocument.addEventListener('DOMContentLoaded', function() {
     function getSpec(path, successMessage) {
         setGenerationStatus('Loading...', 'info')
         axios
-            .get(path)
+            .post(path, correctParsedOutput)
             .then(content => {
                 console.log(content)
-                copyTextToClipboard('Should be done by extension!')
+                copyTextToClipboard(content.data)
                 setGenerationStatus(successMessage, 'success')
             })
             .catch(_ => {
@@ -87,8 +90,8 @@ sdocument.addEventListener('DOMContentLoaded', function() {
         .querySelector('#default-generator')
         .addEventListener('click', () =>
             getSpec(
-                'https://jsonplaceholder.typicode.com/todos/1',
-                'Successfully got default spec!'
+                'http://localhost:8000/parse',
+                'Copied default spec to clipboard!'
             )
         )
 })

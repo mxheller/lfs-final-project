@@ -114,11 +114,11 @@ impl Field {
 peg::parser! {
     grammar pyret_parser() for str {
         pub rule datas() -> Vec<Type>
-            = d:data() ** whitespace() { d }
+            = d:data() * { d }
         pub rule data() -> Type
-            = "data" whitespace() name:name() ":" whitespace()
+            = whitespace() "data" whitespace() name:name() ":" whitespace()
                 variants:variants() whitespace()
-              "end" { Type{ name, variants } }
+              "end" whitespace() { Type{ name, variants } }
         rule name() -> TypeName
             = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'-']+) { n.into() }
         rule variants() -> Vec<Variant>
@@ -150,6 +150,7 @@ struct Definitions {
 fn parse(definitions: Json<Definitions>) -> Result<String, String> {
     let mut cur = Cursor::new(Vec::new());
     let mut parse = |definition, category| -> Result<(), String> {
+        dbg!(definition);
         let parsed: Vec<Type> = pyret_parser::datas(definition).map_err(|e| format!("{}", e))?;
         for data in parsed {
             dbg!(&data);

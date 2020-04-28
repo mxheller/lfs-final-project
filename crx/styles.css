@@ -17,6 +17,11 @@ body {
     justify-content: center;
 }
 
+#help-text {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
 #spec-generation {
     height: 50%;
     display: flex;
