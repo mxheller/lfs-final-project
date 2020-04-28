@@ -1,17 +1,10 @@
+#![feature(proc_macro_hygiene, decl_macro)]
 #![feature(str_strip)]
-use std::{
-    fs::File,
-    io::{Read, Write},
-    str::FromStr,
-};
 
-#[derive(Debug)]
-pub enum TypeError {
-    MissingHeader,
-    MalformedHeader(String),
-    MalformedVariant(String),
-    MalformedField(String),
-}
+#[macro_use]
+extern crate rocket;
+
+use std::io::{Cursor, Write};
 
 pub type TypeName = String;
 
@@ -34,28 +27,6 @@ pub struct Field {
 }
 
 impl Type {
-    fn parse(mut lines: impl Iterator<Item = impl AsRef<str>>) -> Result<Type, TypeError> {
-        let name = Self::parse_name(lines.next().ok_or(TypeError::MissingHeader)?)?;
-        let mut variants = Vec::new();
-        for line in lines {
-            if let Some(variant) = Variant::parse(line)? {
-                variants.push(variant);
-            }
-        }
-        Ok(Self { name, variants })
-    }
-
-    fn parse_name(header: impl AsRef<str>) -> Result<TypeName, TypeError> {
-        let header = header
-            .as_ref()
-            .strip_suffix(':')
-            .ok_or(TypeError::MalformedHeader(header.as_ref().to_string()))?;
-        match words!(header) {
-            ["data", name] => Ok(name.trim().to_string()),
-            _ => Err(TypeError::MalformedHeader(header.to_string())),
-        }
-    }
-
     fn write_forge_definition(&self, mut out: impl Write) -> std::io::Result<()> {
         writeln!(out, "one sig {} extends Type {{}}", self.name)
     }
@@ -88,33 +59,6 @@ impl Type {
 }
 
 impl Variant {
-    fn parse(s: impl AsRef<str>) -> Result<Option<Self>, TypeError> {
-        let s = s.as_ref().trim();
-        match s.split('|').collect::<Vec<_>>().as_slice() {
-            [_, variant] => match variant.split('(').collect::<Vec<_>>().as_slice() {
-                [name, rest] => {
-                    let fields = rest
-                        .strip_suffix(')')
-                        .ok_or(TypeError::MalformedVariant(s.to_string()))?;
-                    let mut parsed = Vec::new();
-                    for field in fields.split(',') {
-                        parsed.push(field.parse()?);
-                    }
-                    Ok(Some(Variant::Complex {
-                        name: name.trim().to_string(),
-                        fields: parsed,
-                    }))
-                }
-                [name] => Ok(Some(Variant::Unit {
-                    name: name.trim().to_string(),
-                })),
-                _ => Err(TypeError::MalformedVariant(s.to_string())),
-            },
-            ["end"] => Ok(None),
-            _ => Err(TypeError::MalformedVariant(s.to_string())),
-        }
-    }
-
     fn name(&self) -> &str {
         match self {
             Self::Unit { name } => name,
@@ -143,51 +87,52 @@ impl Variant {
     }
 }
 
-impl FromStr for Field {
-    type Err = TypeError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match words!(s.trim()) {
-            [field_name, "::", field_type] => Ok(Self {
-                name: field_name.to_string(),
-                type_name: field_type.to_string(),
-            }),
-            _ => Err(TypeError::MalformedField(s.to_string())),
-        }
-    }
-}
-
 impl Field {
     fn forge_repr(&self, field_num: usize) -> String {
         format!("{}->{}", field_num, self.type_name)
     }
 }
 
-#[macro_export]
-macro_rules! words {
-    ($s:expr) => {
-        $s.split_whitespace().collect::<Vec<_>>().as_slice()
-    };
+peg::parser! {
+    grammar pyret_parser() for str {
+        pub rule datas() -> Vec<Type>
+            = d:data() ** whitespace() { d }
+        pub rule data() -> Type
+            = whitespace() "data" whitespace() name:name() ":" whitespace()
+                variants:variants() whitespace()
+              "end" whitespace() { Type{ name, variants } }
+        rule name() -> TypeName
+            = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'-']+) { n.into() }
+        rule variants() -> Vec<Variant>
+            = v:variant() ** whitespace() { v }
+        rule variant() -> Variant
+            = "|" whitespace() name:name() fields:fields() {
+                Variant::Complex{ name, fields }
+            } /
+              "|" whitespace() name:name() {
+                  Variant::Unit { name }
+            }
+        rule fields() -> Vec<Field>
+            = "(" f:field() ** (whitespace() "," whitespace()) ")" { f }
+        rule field() -> Field
+            = name:name() whitespace() "::" whitespace() type_name:name() {
+                Field { name, type_name }
+            }
+        rule whitespace() = quiet!{[' ' | '\n' | '\t']*}
+    }
+}
+
+#[get("/parse/<defn>")]
+fn parse(defn: String) -> Result<String, String> {
+    let mut cur = Cursor::new(Vec::new());
+    let parsed: Vec<Type> = pyret_parser::datas(&defn).map_err(|e| format!("{}", e))?;
+    for data in parsed {
+        dbg!(&data);
+        data.write_forge_spec(&mut cur).unwrap();
+    }
+    Ok(String::from_utf8(cur.into_inner()).unwrap())
 }
 
 fn main() {
-    if std::env::args().len() == 1 {
-        eprintln!("No definition files");
-    }
-
-    for input in std::env::args().skip(1) {
-        match File::open(&input) {
-            Err(e) => eprintln!("Unable to open file '{}': {}", input, e),
-            Ok(mut file) => {
-                let mut definition = String::new();
-                file.read_to_string(&mut definition).unwrap();
-                match Type::parse(definition.lines()) {
-                    Err(e) => eprintln!("Failed to parse definition: {:?}", e),
-                    Ok(parsed) => {
-                        parsed.write_forge_spec(std::io::stdout()).unwrap();
-                    }
-                }
-            }
-        }
-    }
+    rocket::ignite().mount("/", routes![parse]).launch();
 }
