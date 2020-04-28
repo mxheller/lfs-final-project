@@ -7,7 +7,10 @@ extern crate rocket;
 use rocket_contrib::json::Json;
 use rocket_cors::{Cors, CorsOptions};
 use serde::Deserialize;
-use std::io::{Cursor, Write};
+use std::{
+    collections::HashSet,
+    io::{Cursor, Write},
+};
 
 pub type TypeName = String;
 
@@ -36,6 +39,12 @@ pub struct Field {
 }
 
 impl Type {
+    fn referenced_types(&self) -> impl Iterator<Item = &TypeName> {
+        self.variants
+            .iter()
+            .flat_map(|v| v.field_types().into_iter())
+    }
+
     fn write_forge_definition(
         &self,
         category: Category,
@@ -50,7 +59,7 @@ impl Type {
     }
 
     fn write_forge_constraints(&self, mut out: impl Write) -> std::io::Result<()> {
-        writeln!(out, "fact abstract{} {{", self.name)?;
+        writeln!(out, "fact {}Constraints {{", self.name)?;
         writeln!(
             out,
             "    {}.variants = {}",
@@ -81,6 +90,14 @@ impl Variant {
         match self {
             Self::Unit { name } => name,
             Self::Complex { name, .. } => name,
+        }
+    }
+
+    #[inline]
+    fn field_types(&self) -> Vec<&TypeName> {
+        match self {
+            Self::Unit { .. } => Vec::new(),
+            Self::Complex { fields, .. } => fields.iter().map(|f| &f.type_name).collect(),
         }
     }
 
@@ -116,11 +133,13 @@ peg::parser! {
         pub rule datas() -> Vec<Type>
             = d:data() * { d }
         pub rule data() -> Type
-            = whitespace() "data" whitespace() name:name() ":" whitespace()
+            = whitespace() "data" whitespace() name:type_name() ":" whitespace()
                 variants:variants() whitespace()
               "end" whitespace() { Type{ name, variants } }
-        rule name() -> TypeName
+        rule name() -> String
             = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'-']+) { n.into() }
+        rule type_name() -> TypeName
+            = n:name() { format!("T{}", n) }
         rule variants() -> Vec<Variant>
             = v:variant() ** whitespace() { v }
         rule variant() -> Variant
@@ -133,7 +152,7 @@ peg::parser! {
         rule fields() -> Vec<Field>
             = "(" f:field() ** (whitespace() "," whitespace()) ")" { f }
         rule field() -> Field
-            = name:name() whitespace() "::" whitespace() type_name:name() {
+            = name:name() whitespace() "::" whitespace() type_name:type_name() {
                 Field { name, type_name }
             }
         rule whitespace() = quiet!{[' ' | '\n' | '\t']*}
@@ -149,17 +168,40 @@ struct Definitions {
 #[post("/parse", data = "<definitions>")]
 fn parse(definitions: Json<Definitions>) -> Result<String, String> {
     let mut cur = Cursor::new(Vec::new());
-    let mut parse = |definition, category| -> Result<(), String> {
+    let mut parse = |definition, category| -> Result<Vec<Type>, String> {
         dbg!(definition);
-        let parsed: Vec<Type> = pyret_parser::datas(definition).map_err(|e| format!("{}", e))?;
-        for data in parsed {
-            dbg!(&data);
-            data.write_forge_spec(category, &mut cur).unwrap();
+        let types: Vec<Type> = pyret_parser::datas(definition).map_err(|e| format!("{}", e))?;
+        for t in types.iter() {
+            t.write_forge_spec(category, &mut cur).unwrap();
         }
-        Ok(())
+        Ok(types)
     };
-    parse(&definitions.instructor, Category::Instructor)?;
-    parse(&definitions.student, Category::Student)?;
+
+    // Parse instructor and student types
+    let instructor = parse(&definitions.instructor, Category::Instructor)?;
+    let student = parse(&definitions.student, Category::Student)?;
+
+    // Make a set of instructor and student type names
+    let instructor_types: HashSet<_> = instructor.iter().map(|t| &t.name).collect();
+    let student_types: HashSet<_> = student.iter().map(|t| &t.name).collect();
+
+    // Find builtin types referenced
+    let builtins = instructor
+        .iter()
+        .flat_map(Type::referenced_types)
+        .filter(|t| !instructor_types.contains(t))
+        .chain(
+            student
+                .iter()
+                .flat_map(Type::referenced_types)
+                .filter(|t| !student_types.contains(t)),
+        );
+
+    // Write builtins to spec
+    for builtin in builtins {
+        writeln!(&mut cur, "one sig {} extends BuiltinType {{}}", builtin).unwrap();
+    }
+
     Ok(String::from_utf8(cur.into_inner()).unwrap())
 }
 
