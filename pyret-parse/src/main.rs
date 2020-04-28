@@ -4,6 +4,8 @@
 #[macro_use]
 extern crate rocket;
 
+use rocket_contrib::json::Json;
+use serde::Deserialize;
 use std::io::{Cursor, Write};
 
 pub type TypeName = String;
@@ -122,14 +124,25 @@ peg::parser! {
     }
 }
 
-#[get("/parse/<defn>")]
-fn parse(defn: String) -> Result<String, String> {
+#[derive(Deserialize)]
+struct Definitions {
+    instructor: String,
+    student: String,
+}
+
+#[post("/parse", data = "<definitions>")]
+fn parse(definitions: Json<Definitions>) -> Result<String, String> {
     let mut cur = Cursor::new(Vec::new());
-    let parsed: Vec<Type> = pyret_parser::datas(&defn).map_err(|e| format!("{}", e))?;
-    for data in parsed {
-        dbg!(&data);
-        data.write_forge_spec(&mut cur).unwrap();
-    }
+    let mut parse = |definition| -> Result<(), String> {
+        let parsed: Vec<Type> = pyret_parser::datas(definition).map_err(|e| format!("{}", e))?;
+        for data in parsed {
+            dbg!(&data);
+            data.write_forge_spec(&mut cur).unwrap();
+        }
+        Ok(())
+    };
+    parse(&definitions.instructor)?;
+    parse(&definitions.student)?;
     Ok(String::from_utf8(cur.into_inner()).unwrap())
 }
 
