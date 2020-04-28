@@ -10,6 +10,12 @@ use std::io::{Cursor, Write};
 
 pub type TypeName = String;
 
+#[derive(Clone, Copy)]
+enum Category {
+    Instructor,
+    Student,
+}
+
 #[derive(Debug)]
 pub struct Type {
     name: TypeName,
@@ -29,8 +35,17 @@ pub struct Field {
 }
 
 impl Type {
-    fn write_forge_definition(&self, mut out: impl Write) -> std::io::Result<()> {
-        writeln!(out, "one sig {} extends Type {{}}", self.name)
+    fn write_forge_definition(
+        &self,
+        category: Category,
+        mut out: impl Write,
+    ) -> std::io::Result<()> {
+        match category {
+            Category::Instructor => {
+                writeln!(out, "one sig {} extends InstructorType {{}}", self.name)
+            }
+            Category::Student => writeln!(out, "one sig {} extends StudentType {{}}", self.name),
+        }
     }
 
     fn write_forge_constraints(&self, mut out: impl Write) -> std::io::Result<()> {
@@ -51,8 +66,8 @@ impl Type {
         writeln!(out, "}}")
     }
 
-    fn write_forge_spec(&self, mut out: impl Write) -> std::io::Result<()> {
-        self.write_forge_definition(&mut out)?;
+    fn write_forge_spec(&self, category: Category, mut out: impl Write) -> std::io::Result<()> {
+        self.write_forge_definition(category, &mut out)?;
         for variant in self.variants.iter() {
             variant.write_forge_definition(&mut out)?;
         }
@@ -133,16 +148,16 @@ struct Definitions {
 #[post("/parse", data = "<definitions>")]
 fn parse(definitions: Json<Definitions>) -> Result<String, String> {
     let mut cur = Cursor::new(Vec::new());
-    let mut parse = |definition| -> Result<(), String> {
+    let mut parse = |definition, category| -> Result<(), String> {
         let parsed: Vec<Type> = pyret_parser::datas(definition).map_err(|e| format!("{}", e))?;
         for data in parsed {
             dbg!(&data);
-            data.write_forge_spec(&mut cur).unwrap();
+            data.write_forge_spec(category, &mut cur).unwrap();
         }
         Ok(())
     };
-    parse(&definitions.instructor)?;
-    parse(&definitions.student)?;
+    parse(&definitions.instructor, Category::Instructor)?;
+    parse(&definitions.student, Category::Student)?;
     Ok(String::from_utf8(cur.into_inner()).unwrap())
 }
 
