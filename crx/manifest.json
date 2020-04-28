@@ -4,7 +4,6 @@
     "description": "Generates an Alloy* specification to verify the correctness of Pyret data definitions.",
     "permissions": [
         "https://code.pyret.org/**",
-        "https://www.google.com",
         "tabs"
     ],
     "page_action": {

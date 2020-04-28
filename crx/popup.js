@@ -76,13 +76,18 @@ document.addEventListener('DOMContentLoaded', function() {
         axios
             .post(path, correctParsedOutput)
             .then(content => {
-                console.log(content)
-                copyTextToClipboard(content.data)
-                setGenerationStatus(successMessage, 'success')
+                // Jank!
+                if (content.data.includes('error')) {
+                    setGenerationStatus(content.data, 'error')
+                } else {
+                    copyTextToClipboard(content.data)
+                    setGenerationStatus(successMessage, 'success')
+                }
             })
             .catch(_ => {
+                // TODO: Figure out if this catches both network and http errors
                 console.log('Network error!')
-                setGenerationStatus('Error retrieving spec.', 'error')
+                setGenerationStatus('Network error retrieving spec.', 'error')
             })
     }
 
