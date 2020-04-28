@@ -55,6 +55,11 @@ body {
 
 #generation-status {
     transition: opacity ease-in 0.15s;
+    height: 15px;
+}
+
+#program-status {
+    height: 15px;
 }
 
 .success {
