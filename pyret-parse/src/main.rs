@@ -98,9 +98,9 @@ peg::parser! {
         pub rule datas() -> Vec<Type>
             = d:data() ** whitespace() { d }
         pub rule data() -> Type
-            = whitespace() "data" whitespace() name:name() ":" whitespace()
+            = "data" whitespace() name:name() ":" whitespace()
                 variants:variants() whitespace()
-              "end" whitespace() { Type{ name, variants } }
+              "end" { Type{ name, variants } }
         rule name() -> TypeName
             = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'-']+) { n.into() }
         rule variants() -> Vec<Variant>
