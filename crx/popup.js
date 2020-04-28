@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+sdocument.addEventListener('DOMContentLoaded', function() {
     function setLoadText(text, status) {
         const node = document.querySelector('#program-status')
         node.innerHTML = text
@@ -22,16 +22,51 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.querySelector('#program-loader').addEventListener('click', () => {
-        const val = document.querySelector('#spec-input').value
-        if (val.length) {
+        const validateOutput = validateLoad(
+            document.querySelector('#spec-input').value
+        )
+        if (!validateOutput.error) {
             setLoadText('Successfully loaded!', 'success')
+            console.log(validateOutput)
             enableButtons()
         } else {
-            setLoadText('Enter data definitions.', 'error')
+            setLoadText(validateOutput.error, 'error')
             disableButtons()
             setGenerationStatus('', '')
         }
     })
+
+    // Returns {student: string, instructor: string}. {error: string} if error.
+    function validateLoad(input) {
+        const lines = input.trim().split('\n')
+        let studentStart = lines.indexOf('# @Student')
+        if (studentStart === -1) {
+            return { error: 'No student def found.' }
+        }
+
+        let instructorStart = lines.indexOf('# @Instructor')
+        if (instructorStart === -1) {
+            return { error: 'No instructor def found.' }
+        }
+
+        let student = ''
+        let instructor = ''
+        if (studentStart < instructorStart) {
+            student = lines.slice(studentStart + 1, instructorStart).join('\n')
+            instructor = lines
+                .slice(instructorStart + 1, lines.length)
+                .join('\n')
+        } else if (instructorStart < studentStart) {
+            instructor = lines
+                .slice(instructorStart + 1, studentStart)
+                .join('\n')
+            student = lines.slice(studentStart + 1, input.length).join('\n')
+        } else {
+            return { error: 'Invalid data definition.' }
+        }
+
+        return { student, instructor }
+    }
 
     function getSpec(path, successMessage) {
         setGenerationStatus('Loading...', 'info')
