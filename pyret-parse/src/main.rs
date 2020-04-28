@@ -5,6 +5,7 @@
 extern crate rocket;
 
 use rocket_contrib::json::Json;
+use rocket_cors::{Cors, CorsOptions};
 use serde::Deserialize;
 use std::io::{Cursor, Write};
 
@@ -162,5 +163,8 @@ fn parse(definitions: Json<Definitions>) -> Result<String, String> {
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![parse]).launch();
+    rocket::ignite()
+        .mount("/", routes![parse])
+        .attach(Cors::from_options(&CorsOptions::default()).unwrap())
+        .launch();
 }

@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 peg = "^0.6"
 rocket = "^0.4"
+rocket_cors = "^0.5"
 serde = { version = "^1.0", features = ["derive"] }
 
 [dependencies.rocket_contrib]
