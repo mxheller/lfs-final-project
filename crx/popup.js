@@ -24,19 +24,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.querySelector('#program-loader').addEventListener('click', () => {
-        const validateOutput = validateLoad(
-            document.querySelector('#spec-input').value
-        )
-        if (!validateOutput.error) {
-            correctParsedOutput = validateOutput
-            setLoadText('Successfully loaded!', 'success')
-            enableButtons()
-        } else {
-            correctParsedOutput = null
-            setLoadText(validateOutput.error, 'error')
-            disableButtons()
-            setGenerationStatus('', '')
-        }
+        setLoadText('Loading...', 'info')
+        setTimeout(() => {
+            chrome.storage.sync.get(['codeForLogic'], function(items) {
+                const code = items.codeForLogic
+                if (code.length === 0) {
+                    return setLoadText(
+                        'No code found. Did you hit Run?',
+                        'error'
+                    )
+                }
+
+                const validateOutput = validateLoad(items.codeForLogic)
+
+                if (!validateOutput.error) {
+                    correctParsedOutput = validateOutput
+                    setLoadText('Successfully loaded!', 'success')
+                    enableButtons()
+                } else {
+                    correctParsedOutput = null
+                    setLoadText(validateOutput.error, 'error')
+                    disableButtons()
+                    setGenerationStatus('', '')
+                }
+            })
+        }, 1100)
     })
 
     // Returns {student: string, instructor: string}. {error: string} if error.

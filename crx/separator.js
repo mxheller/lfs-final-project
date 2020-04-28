@@ -68,3 +68,18 @@ assert(
     inputTwo.instructor ===
         'data iAmCorrect: # Here is a comment\n    | corr(foo: Number)\n    | mt\nend'
 )
+
+let input3 = `
+# @Instructor
+data foo:
+  | meme(a :: Number, b :: String)
+end
+
+# @Student
+data bar:
+  | mimi(few :: String, faw :: Number)
+end
+
+
+# No fucking way`
+console.log(validateLoad(input3))

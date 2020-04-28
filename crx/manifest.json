@@ -4,7 +4,8 @@
     "description": "Generates an Alloy* specification to verify the correctness of Pyret data definitions.",
     "permissions": [
         "https://code.pyret.org/**",
-        "tabs"
+        "tabs",
+        "storage"
     ],
     "page_action": {
         "default_title": "Pyret Data Companion",
@@ -16,6 +17,16 @@
         ],
         "persistent": false
     },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://code.pyret.org/*"
+            ],
+            "js": [
+                "contentScript.js"
+            ]
+        }
+    ],
     "content_security_policy": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'",
     "manifest_version": 2
 }

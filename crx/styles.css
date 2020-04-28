@@ -17,7 +17,7 @@ body {
     justify-content: center;
 }
 
-#help-text {
+.help-text {
     text-align: center;
     margin: 0 10px 10px;
 }
@@ -78,4 +78,24 @@ textarea {
     resize: none;
     width: 60%;
     font-family: 'Courier New', 'Courier', 'monospace';
+}
+
+.important {
+    font-weight: bold;
+}
+
+.flashOnShow {
+    animation: flashOnShow 0.9s 2 forwards ease-in-out;
+}
+
+@keyframes flashOnShow {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.2;
+    }
+    100% {
+        opacity: 1;
+    }
 }

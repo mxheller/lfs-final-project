@@ -9,16 +9,20 @@
     </head>
     <body>
         <div id="spec-status">
-            <div id="help-text" class="info">
-                Annotate the instructor definition with
-                <code># @Instructor</code> and your student one with
+            <div class="help-text" class="info">
+                Annotate the instructor definitions with
+                <code># @Instructor</code> and your student ones with
                 <code># @Student</code>.
+                <br />
             </div>
-            <textarea id="spec-input" rows="6"></textarea>
+            <div class="help-text important flashOnShow">
+                Make sure to hit Run before trying to load the program.
+            </div>
+            <!-- <textarea id="spec-input" rows="6"></textarea> -->
             <button id="program-loader" class="button">
-                Load Program from Textarea
+                Load Program from Pyret
             </button>
-            <div id="program-status"></div>
+            <div id="program-status" class="important"></div>
         </div>
         <div id="spec-generation">
             <button id="default-generator" disabled class="button">
