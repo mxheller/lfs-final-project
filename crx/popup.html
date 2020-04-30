@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>Pyret Data Companion</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <div id="spec-status">
+            <div class="help-text" class="info">
+                Annotate the instructor definitions with
+                <code># @Instructor</code> and your student ones with
+                <code># @Student</code>.
+                <br />
+            </div>
+            <div class="help-text important flashOnShow">
+                Make sure to hit Run before trying to load the program.
+            </div>
+            <!-- <textarea id="spec-input" rows="6"></textarea> -->
+            <button id="program-loader" class="button">
+                Load Program from Pyret
+            </button>
+            <div id="program-status" class="important"></div>
+        </div>
+        <div id="spec-generation">
+            <button id="default-generator" disabled class="button">
+                Generate Default Spec
+            </button>
+            <button id="cool-generator" disabled class="button">
+                Generate Cool Spec
+            </button>
+            <div id="generation-status" class="success"></div>
+        </div>
+        <script src="popup.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    </body>
+</html>

@@ -1,0 +1,106 @@
+html {
+    width: 400px;
+    height: 350px;
+}
+
+body {
+    margin: 0;
+    height: 100%;
+}
+
+#spec-status {
+    height: 60%;
+    background-color: #f4f4f4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.help-text {
+    text-align: center;
+    margin: 0 10px 10px;
+}
+
+#spec-generation {
+    height: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.button {
+    width: 50%;
+    height: 50px;
+    border: none;
+    color: white;
+    background-color: #3ccfcf;
+    font-weight: 700;
+    border-radius: 4px;
+    transition: all 0.12s cubic-bezier(0.47, 0, 0.745, 0.715);
+    cursor: pointer;
+    margin: 10px 0;
+}
+
+.button:hover {
+    background-color: #ffcd1f;
+    color: #455358;
+}
+
+.button:hover:disabled {
+    color: white;
+    background-color: #3ccfcf;
+}
+
+#generation-status {
+    transition: opacity ease-in 0.15s;
+    height: 15px;
+}
+
+#program-status {
+    height: 15px;
+}
+
+.success {
+    color: #3ccfcf;
+}
+
+.error {
+    color: #e74c3c;
+}
+
+.info {
+    color: #455358;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+textarea {
+    resize: none;
+    width: 60%;
+    font-family: 'Courier New', 'Courier', 'monospace';
+}
+
+.important {
+    font-weight: bold;
+}
+
+.flashOnShow {
+    animation: flashOnShow 0.9s 2 forwards ease-in-out;
+}
+
+@keyframes flashOnShow {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.2;
+    }
+    100% {
+        opacity: 1;
+    }
+}
