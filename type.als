@@ -122,3 +122,33 @@ pred bijective[f: univ->univ, a: univ, b: univ] {
 	// surjective
 	f[a] = b
 }
+
+// checks if a variant "redundant" in the sense that they same data
+// could be expressed with a different variant
+pred maybeRedundantVariant[t: Type] {
+	some v1: t.variants | {
+		some v2: t.variants - v1 | {
+			some f: Int->Int | {
+				// v2 has all the fields of v1
+        		injective[f, v1.fields.inds, v2.fields.inds]
+				all i: f.Int | {
+					let t1 = v1.fields[i] | let t2 = v2.fields[f[i]] | {
+                		// The types are equal
+                		t1 = t2
+					}
+				}
+				// any additional variants could be empty
+				all i: v2.fields.inds - f[Int] | {
+					hasEmptyVariant[v2.fields[i], v1]
+				}
+			}
+		}
+	}
+}
+
+// checks if there is some variant (not including ignore)
+// with no fields
+pred hasEmptyVariant[t: Type, ignore: Variant] {
+	some v: t.variants - ignore |
+		no v.fields
+}
