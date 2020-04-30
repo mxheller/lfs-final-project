@@ -195,7 +195,8 @@ fn parse(definitions: Json<Definitions>) -> Result<String, String> {
                 .iter()
                 .flat_map(Type::referenced_types)
                 .filter(|t| !student_types.contains(t)),
-        );
+        )
+        .collect::<HashSet<_>>();
 
     // Write builtins to spec
     for builtin in builtins {
