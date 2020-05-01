@@ -2,6 +2,7 @@
     "name": "Pyret Data Companion",
     "version": "1.0",
     "description": "Generates an Alloy* specification to verify the correctness of Pyret data definitions.",
+    "icons": { "128": "img/pyret-logo.png" },
     "permissions": ["https://code.pyret.org/**", "tabs", "storage"],
     "page_action": {
         "default_title": "Pyret Data Companion",

@@ -84,6 +84,12 @@ var options = {
                 },
             },
         ]),
+        new CopyWebpackPlugin([
+            {
+                from: "src/img",
+                to: "img",
+            },
+        ]),
         new HtmlWebpackPlugin({
             template: path.join(__dirname, "src", "popup.html"),
             filename: "popup.html",
