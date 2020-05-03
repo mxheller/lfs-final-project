@@ -1,3 +1,20 @@
+// data BinTreeCorrect:
+//   | mtC
+//   | nodeC(val :: Number, left :: BinTreeCorrect, right :: BinTreeCorrect)
+// end
+
+// data PersonCorrect:
+//   | personC(name :: String, age :: Number)
+// end
+
+// data BinTreeStudent:
+//   | nodeS(val :: Number, left :: BinTreeStudent, right :: BinTreeStudent)
+// end
+
+// data PersonStudent:
+//   | personS(name :: String, age :: Number)
+// end
+
 one sig TString extends BuiltinType {}
 one sig Number extends BuiltinType {}
 
@@ -29,3 +46,6 @@ fact abstractPersonStudent {
     PersonStudent.variants = personStudent
     personStudent.fields = 0->TString + 1->Number
 }
+
+// The types are equivalent
+run {equivalent} for 4 Type, 6 Variant
