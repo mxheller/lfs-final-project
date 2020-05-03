@@ -2,31 +2,23 @@
     "name": "Pyret Data Companion",
     "version": "1.0",
     "description": "Generates an Alloy* specification to verify the correctness of Pyret data definitions.",
-    "permissions": [
-        "https://code.pyret.org/**",
-        "tabs",
-        "storage"
-    ],
+    "icons": { "128": "img/pyret-logo.png" },
+    "permissions": ["https://code.pyret.org/**", "tabs", "storage"],
     "page_action": {
         "default_title": "Pyret Data Companion",
         "default_popup": "popup.html"
     },
     "background": {
-        "scripts": [
-            "background.js"
-        ],
+        "scripts": ["background.js"],
         "persistent": false
     },
     "content_scripts": [
         {
-            "matches": [
-                "https://code.pyret.org/*"
-            ],
-            "js": [
-                "contentScript.js"
-            ]
+            "matches": ["https://code.pyret.org/*"],
+            "js": ["contentScript.js"]
         }
     ],
-    "content_security_policy": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'",
+    "content_security_policy": "script-src 'self' 'wasm-eval'; object-src 'self'",
     "manifest_version": 2
 }
+

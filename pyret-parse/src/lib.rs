@@ -1,16 +1,49 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-#![feature(str_strip)]
-
-#[macro_use]
-extern crate rocket;
-
-use rocket_contrib::json::Json;
-use rocket_cors::{Cors, CorsOptions};
-use serde::Deserialize;
 use std::{
     collections::HashSet,
     io::{Cursor, Write},
 };
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+pub fn parse(instructor: &str, student: &str) -> Result<String, JsValue> {
+    let mut cur = Cursor::new(Vec::new());
+    let mut parse = |definition, category| -> Result<Vec<Type>, String> {
+        dbg!(definition);
+        let types: Vec<Type> = pyret_parser::datas(definition).map_err(|e| format!("{}", e))?;
+        for t in types.iter() {
+            t.write_forge_spec(category, &mut cur).unwrap();
+        }
+        Ok(types)
+    };
+
+    // Parse instructor and student types
+    let instructor = parse(instructor, Category::Instructor)?;
+    let student = parse(student, Category::Student)?;
+
+    // Make a set of instructor and student type names
+    let instructor_types: HashSet<_> = instructor.iter().map(|t| &t.name).collect();
+    let student_types: HashSet<_> = student.iter().map(|t| &t.name).collect();
+
+    // Find builtin types referenced
+    let builtins = instructor
+        .iter()
+        .flat_map(Type::referenced_types)
+        .filter(|t| !instructor_types.contains(t))
+        .chain(
+            student
+                .iter()
+                .flat_map(Type::referenced_types)
+                .filter(|t| !student_types.contains(t)),
+        )
+        .collect::<HashSet<_>>();
+
+    // Write builtins to spec
+    for builtin in builtins {
+        writeln!(&mut cur, "one sig {} extends BuiltinType {{}}", builtin).unwrap();
+    }
+
+    Ok(String::from_utf8(cur.into_inner()).unwrap())
+}
 
 pub type TypeName = String;
 
@@ -157,58 +190,4 @@ peg::parser! {
             }
         rule whitespace() = quiet!{[' ' | '\n' | '\t']*}
     }
-}
-
-#[derive(Deserialize)]
-struct Definitions {
-    instructor: String,
-    student: String,
-}
-
-#[post("/parse", data = "<definitions>")]
-fn parse(definitions: Json<Definitions>) -> Result<String, String> {
-    let mut cur = Cursor::new(Vec::new());
-    let mut parse = |definition, category| -> Result<Vec<Type>, String> {
-        dbg!(definition);
-        let types: Vec<Type> = pyret_parser::datas(definition).map_err(|e| format!("{}", e))?;
-        for t in types.iter() {
-            t.write_forge_spec(category, &mut cur).unwrap();
-        }
-        Ok(types)
-    };
-
-    // Parse instructor and student types
-    let instructor = parse(&definitions.instructor, Category::Instructor)?;
-    let student = parse(&definitions.student, Category::Student)?;
-
-    // Make a set of instructor and student type names
-    let instructor_types: HashSet<_> = instructor.iter().map(|t| &t.name).collect();
-    let student_types: HashSet<_> = student.iter().map(|t| &t.name).collect();
-
-    // Find builtin types referenced
-    let builtins = instructor
-        .iter()
-        .flat_map(Type::referenced_types)
-        .filter(|t| !instructor_types.contains(t))
-        .chain(
-            student
-                .iter()
-                .flat_map(Type::referenced_types)
-                .filter(|t| !student_types.contains(t)),
-        )
-        .collect::<HashSet<_>>();
-
-    // Write builtins to spec
-    for builtin in builtins {
-        writeln!(&mut cur, "one sig {} extends BuiltinType {{}}", builtin).unwrap();
-    }
-
-    Ok(String::from_utf8(cur.into_inner()).unwrap())
-}
-
-fn main() {
-    rocket::ignite()
-        .mount("/", routes![parse])
-        .attach(Cors::from_options(&CorsOptions::default()).unwrap())
-        .launch();
 }
