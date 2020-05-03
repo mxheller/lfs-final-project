@@ -93,12 +93,12 @@ Consider the following definition:
 ```
 data BinTree:
   | mt
-  | one(val :: Number)
+  | leaf(val :: Number)
   | node(val :: Number, left :: BinTree, right :: BinTree)
 end
 ```
 
-The `one` variant is "redundant" in the sense that the same data could be
+The `leaf` variant is "redundant" in the sense that the same data could be
 expressed as a `node` with `mt` `left` and `right` fields. We wanted to identify
 when a type had a variant which could have all of its data represented through
 the other variants of the type. While a programmer could intentionally use this
@@ -113,6 +113,12 @@ variant, one with no fields.
 
 There are many more ways that this sort of redundancy could occur, but we felt
 this was the most likely way a student could make this mistake.
+
+## Testing
+
+We provide several examples of data definitions and their corresponding sigs in
+the `sample-types` directory. They illustrate the different comparisons we can
+make between different student and instructor definitions.
 
 ## Conclusion
 
