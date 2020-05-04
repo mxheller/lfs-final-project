@@ -55,6 +55,31 @@ from data definitions written by students and instructors, respectively, while
 `BuiltinType` are things like numbers and strings which neither students nor
 instructors define, but both reference.
 
+To make the process of going from Pyret data definitions to Alloy\* specs easy,
+we've built a Chrome extension that will take a set of definitions from the
+[Pyret editor](https://code.pyret.org) and produce a series of sigs that
+represent that data. Currently, we support Pyret files with data definitions
+that have annotations indicating whether the definition is a student or
+instructor one. See the following code snippet for an example of valid syntax:
+
+```
+# @Instructor
+data foo:
+  | noFields
+  | oneField(bar: Number)
+end
+
+# @Student
+data baz:
+  | severalFields(a: String, b: String, c: baz)
+end
+```
+
+To install the extension, go to [chrome://extensions](chrome://extensions),
+enter developer mode, click "Load unpacked", and select the `crx` directory
+from this project. Then, when you're on `code.pyret.org`, you'll be able to
+click on the extension favicon to use it.
+
 ## Comparison
 
 The purpose of our project is to perform a comparison between student-defined
